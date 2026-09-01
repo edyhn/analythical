@@ -1,6 +1,8 @@
 import type { ReactNode } from "react"
 
-import { LoadingState, EmptyState, ErrorState } from "@/components/states"
+import { EmptyState } from "@/components/states/empty-state"
+import { ErrorState } from "@/components/states/error-state"
+import { LoadingState } from "@/components/states/loading-state"
 
 interface AsyncStatesProps {
   isLoading?: boolean

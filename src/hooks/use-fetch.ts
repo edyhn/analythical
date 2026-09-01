@@ -68,7 +68,7 @@ export function useFetch<T>(
   const refresh = useCallback(() => run("refresh"), [run])
   useEffect(() => {
     if (enabled) {
-      void run("initial")
+      void run("initial").catch(() => undefined)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, enabled])
