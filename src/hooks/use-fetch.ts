@@ -83,6 +83,17 @@ export function useFetch<T>(
   )
 
   const refresh = useCallback(() => run("refresh"), [run])
+
+  // When the hook becomes disabled, invalidate any active request so it can no
+  // longer commit data, error, a callback, or terminal loading state, and
+  // normalize the loading indicators to false without dropping cached data.
+  useEffect(() => {
+    if (!enabled) {
+      requestGenerationRef.current += 1
+      setState((s) => ({ ...s, isLoading: false, isRefreshing: false }))
+    }
+  }, [enabled])
+
   useEffect(() => {
     if (enabled) {
       void run("initial").catch(() => undefined)
