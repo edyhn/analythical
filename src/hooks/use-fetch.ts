@@ -32,33 +32,50 @@ export function useFetch<T>(
   fetcherRef.current = fetcher
   const optionsRef = useRef(options)
   optionsRef.current = options
+  const requestGenerationRef = useRef(0)
+  const isMountedRef = useRef(false)
+
+  useEffect(() => {
+    isMountedRef.current = true
+
+    return () => {
+      isMountedRef.current = false
+      requestGenerationRef.current += 1
+    }
+  }, [])
 
   const run = useCallback(
     async (mode: "initial" | "refresh" = "initial") => {
+      const requestGeneration = ++requestGenerationRef.current
+
       if (mode === "initial") {
-        setState((s) => ({ ...s, isLoading: true, error: null }))
+        setState((s) => ({ ...s, isLoading: true, isRefreshing: false, error: null }))
       } else {
-        setState((s) => ({ ...s, isRefreshing: true, error: null }))
+        setState((s) => ({ ...s, isLoading: false, isRefreshing: true, error: null }))
       }
       try {
         const result = await fetcherRef.current()
-        setState({
-          data: result,
-          error: null,
-          isLoading: false,
-          isRefreshing: false,
-        })
-        optionsRef.current.onSuccess?.(result)
+        if (isMountedRef.current && requestGeneration === requestGenerationRef.current) {
+          setState({
+            data: result,
+            error: null,
+            isLoading: false,
+            isRefreshing: false,
+          })
+          optionsRef.current.onSuccess?.(result)
+        }
         return result
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err))
-        setState((s) => ({
-          ...s,
-          error,
-          isLoading: false,
-          isRefreshing: false,
-        }))
-        optionsRef.current.onError?.(error)
+        if (isMountedRef.current && requestGeneration === requestGenerationRef.current) {
+          setState((s) => ({
+            ...s,
+            error,
+            isLoading: false,
+            isRefreshing: false,
+          }))
+          optionsRef.current.onError?.(error)
+        }
         throw error
       }
     },
